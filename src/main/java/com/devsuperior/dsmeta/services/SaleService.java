@@ -3,8 +3,12 @@ package com.devsuperior.dsmeta.services;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
+import com.devsuperior.dsmeta.dto.SaleMinReportDTO;
+import com.devsuperior.dsmeta.dto.SaleMinSummaryDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +30,27 @@ public class SaleService {
 		return new SaleMinDTO(entity);
 	}
 
-	public Page<SaleMinDTO> findReport(String minDateStr, String maxDateStr, String name, Pageable pageable){
+	public Page<SaleMinReportDTO> findReport(String minDateStr, String maxDateStr, String name, Pageable pageable){
+		List<LocalDate> dates = resolveDates(minDateStr, maxDateStr);
+
+//Se o nome não for informado, considerar o texto vazio.
+		String nameFilter;
+		if (name == null || name.isBlank()){
+			nameFilter = "";
+		}else {
+			nameFilter = name;
+		}
+
+		return repository.searchReport(dates.get(0), dates.get(1), nameFilter, pageable);
+	}
+
+	public List<SaleMinSummaryDTO> findSummary(String minDateStr, String maxDateStr){
+		List<LocalDate> dates = resolveDates(minDateStr, maxDateStr);
+
+		return repository.searchSummary(dates.get(0), dates.get(1));
+	}
+
+	public List<LocalDate> resolveDates(String minDateStr, String maxDateStr){
 //Se a data final não for informada, considerar a data atual do sistema.
 		LocalDate maxDate;
 		if (maxDateStr == null || maxDateStr.isBlank()) {
@@ -43,19 +67,11 @@ public class SaleService {
 			minDate = LocalDate.parse(minDateStr);
 		}
 
-//Se o nome não for informado, considerar o texto vazio.
-		String nameFilter;
-		if (name == null || name.isBlank()){
-			nameFilter = "";
-		}else {
-			nameFilter = name;
-		}
+		List<LocalDate> list = new ArrayList<>();
+		list.add(minDate);
+		list.add(maxDate);
 
-		return repository.searchReport(minDate, maxDate, nameFilter, pageable);
-	}
-
-	public Page<SaleMinDTO> findSummary(){
-		return null;
+		return list;
 	}
 
 }
